@@ -2,6 +2,9 @@
   <div class="index container">
     <div class="card" v-for="smoothie in smoothies" :key="smoothie.id">
       <div class="card-content">
+        <i class="material-icons delete" @click="deleteSmoothie(smoothie.id)"
+          >delete</i
+        >
         <h2 class="indigo-text">{{ smoothie.title }}</h2>
         <ul class="ingredients">
           <li v-for="(ingredient, index) in smoothie.ingredients" :key="index">
@@ -9,30 +12,53 @@
           </li>
         </ul>
       </div>
+      <span class="btn-floating btn-large halfway-fab pink">
+        <router-link
+          :to="{
+            name: 'EditSmoothie',
+            params: { smoothie_slug: smoothie.slug }
+          }"
+        >
+          <i class="material-icons edit">edit</i>
+        </router-link>
+      </span>
     </div>
   </div>
 </template>
 
 <script>
+import db from "@/firebase/init";
+
 export default {
   name: "Index",
   data() {
     return {
-      smoothies: [
-        {
-          id: "1",
-          title: "Ninja Brew",
-          slug: "ninja-brew",
-          ingredients: ["banana", "coffee", "milk"]
-        },
-        {
-          id: "2",
-          title: "Morning Mood",
-          slug: "morning-mood",
-          ingredients: ["mango", "lime", "tea"]
-        }
-      ]
+      smoothies: []
     };
+  },
+  methods: {
+    deleteSmoothie(id) {
+      db.collection("smoothies")
+        .doc(id)
+        .delete()
+        .then(() => {
+          this.smoothies = this.smoothies.filter(smoothie => {
+            return smoothie.id != id;
+          });
+        });
+    }
+  },
+  created() {
+    db.collection("smoothies")
+      .get()
+      .then(snapshot => {
+        snapshot.forEach(document => {
+          let smoothie = document.data();
+          // console.log(smoothie)
+          smoothie.id = document.id;
+          this.smoothies.push(smoothie);
+        });
+      });
   }
 };
 </script>
@@ -55,5 +81,13 @@ export default {
 }
 .index .ingredients li {
   display: inline-block;
+}
+.index .delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 1.4em;
 }
 </style>
